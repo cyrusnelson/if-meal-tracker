@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>IF Meal Plan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0F0E0C; color: #EDE8DC; font-family: Georgia, 'Times New Roman', serif; min-height: 100vh; }
+  button { cursor: pointer; font-family: 'Courier New', monospace; }
+  .mono { font-family: 'Courier New', monospace; }
+
+  /* Header */
+  .header { background: linear-gradient(180deg,#1A1812 0%,#0F0E0C 100%); padding: 32px 20px 0; border-bottom: 1px solid #2A2820; }
+  .header-inner { max-width: 560px; margin: 0 auto; }
+  .header-eyebrow { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #C4A55A; font-family: 'Courier New', monospace; margin-bottom: 8px; }
+  .header-title { font-size: clamp(22px,5vw,36px); font-weight: 400; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 20px; }
+  .main-tabs { display: flex; }
+  .main-tab { padding: 12px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 13px; color: #5A5448; letter-spacing: .05em; transition: all .15s; }
+  .main-tab.active { color: #EDE8DC; border-bottom-color: #C4A55A; }
+
+  /* Day tabs */
+  .day-tabs-wrap { background: #13120F; border-bottom: 1px solid #2A2820; padding: 0 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .day-tabs { max-width: 560px; margin: 0 auto; display: flex; min-width: min-content; }
+  .day-tab { flex: 1; min-width: 54px; padding: 13px 6px; background: none; border: none; border-bottom: 2px solid transparent; text-align: center; transition: all .2s; }
+  .day-tab-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; font-family: 'Courier New', monospace; color: #4A4840; margin-bottom: 3px; }
+  .day-tab-dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; margin: 0 auto; }
+
+  /* Content */
+  .content { max-width: 560px; margin: 0 auto; padding: 20px 20px 80px; }
+
+  /* Calorie bar */
+  .cal-bar { border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .cal-bar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .cal-bar-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #5A5448; font-family: 'Courier New', monospace; }
+  .cal-bar-total { font-size: 18px; font-weight: 500; font-family: 'Courier New', monospace; }
+  .cal-bar-track { height: 4px; background: #2A2820; border-radius: 2px; margin-bottom: 8px; position: relative; }
+  .cal-bar-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+  .cal-bar-marker { position: absolute; top: -2px; width: 1px; height: 8px; background: #3A3830; }
+  .cal-bar-split { display: flex; justify-content: space-between; font-size: 10px; color: #4A4840; font-family: 'Courier New', monospace; margin-bottom: 6px; }
+  .cal-bar-dinner { font-size: 11px; color: #4A4840; font-family: 'Courier New', monospace; line-height: 1.5; }
+  .snack-note { margin-top: 8px; padding: 8px 10px; border-radius: 6px; font-size: 11px; color: #C4A55A; font-family: 'Courier New', monospace; line-height: 1.5; background: rgba(196,165,90,.08); border: 1px solid rgba(196,165,90,.2); }
+
+  /* Meal card */
+  .meal-card { border-radius: 10px; overflow: hidden; transition: all .2s; margin-bottom: 8px; border: 1px solid #2A2820; background: #171512; }
+  .meal-card.open { background: #1E1C18; }
+  .meal-card-header { padding: 14px 16px; cursor: pointer; }
+  .meal-tags { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .tag { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; font-family: 'Courier New', monospace; padding: 2px 6px; border-radius: 3px; }
+  .meal-name { font-size: 16px; font-weight: 400; color: #EDE8DC; margin-bottom: 4px; letter-spacing: -.01em; }
+  .meal-desc { font-size: 11px; color: #5A5448; font-family: 'Courier New', monospace; line-height: 1.5; }
+  .meal-toggle { font-size: 14px; transition: all .2s; flex-shrink: 0; margin-top: 2px; }
+  .macros-row { display: flex; gap: 8px; margin-top: 10px; }
+  .cal-pill { border-radius: 6px; padding: 6px 10px; text-align: center; min-width: 64px; }
+  .cal-pill-num { font-size: 15px; font-weight: 600; }
+  .cal-pill-label { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; font-family: 'Courier New', monospace; margin-top: 1px; }
+  .macro-box { background: #0F0E0C; border: 1px solid #2A2820; border-radius: 6px; padding: 6px 10px; text-align: center; flex: 1; }
+  .macro-val { font-size: 13px; font-weight: 500; color: #8A8070; }
+  .macro-key { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: #4A4840; font-family: 'Courier New', monospace; margin-top: 1px; }
+
+  /* Expanded */
+  .meal-body { border-top: 1px solid #2A2820; }
+  .budget-note-bar { padding: 8px 16px; background: #13120F; border-bottom: 1px solid #2A2820; font-size: 11px; font-family: 'Courier New', monospace; }
+  .panel-tabs { display: flex; border-bottom: 1px solid #2A2820; }
+  .panel-tab { flex: 1; padding: 9px 4px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #4A4840; font-family: 'Courier New', monospace; transition: all .15s; }
+  .panel-content { padding: 14px 16px 16px; }
+  .why-text { font-size: 12px; color: #9A9080; line-height: 1.7; font-family: 'Courier New', monospace; }
+  .recipe-step { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+  .step-num { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; font-size: 9px; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-top: 1px; }
+  .step-text { font-size: 12px; color: #9A9080; line-height: 1.65; font-family: 'Courier New', monospace; }
+  .tip-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+  .tip-arrow { font-size: 11px; margin-top: 2px; flex-shrink: 0; }
+  .tip-text { font-size: 12px; color: #8A8070; line-height: 1.5; font-family: 'Courier New', monospace; }
+
+  /* Fast window + nav */
+  .fast-bar { padding: 11px 14px; background: #161410; border: 1px solid #2A2820; border-radius: 8px; font-size: 11px; color: #5A5448; font-family: 'Courier New', monospace; margin-top: 4px; }
+  .day-nav { display: flex; gap: 10px; margin-top: 8px; }
+  .nav-btn { flex: 1; padding: 11px; background: #161410; border: 1px solid #2A2820; border-radius: 8px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #6A6458; }
+  .nav-btn.next { color: #C4A55A; text-align: right; }
+
+  /* Section label */
+  .section-label { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: #4A4840; font-family: 'Courier New', monospace; padding-left: 2px; margin-bottom: 6px; margin-top: 10px; }
+
+  /* Day header */
+  .day-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .day-name { font-size: 20px; font-weight: 400; letter-spacing: -.01em; }
+  .day-num { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; font-family: 'Courier New', monospace; }
+
+  /* Shopping */
+  .shop-wrap { max-width: 560px; margin: 0 auto; padding: 20px 20px 80px; }
+  .budget-line { font-size: 11px; color: #7DB87D; font-family: 'Courier New', monospace; margin-bottom: 10px; }
+  .progress-row { display: flex; justify-content: space-between; font-size: 11px; color: #5A5448; font-family: 'Courier New', monospace; margin-bottom: 6px; }
+  .progress-track { height: 3px; background: #2A2820; border-radius: 2px; margin-bottom: 24px; }
+  .progress-fill { height: 100%; background: #C4A55A; border-radius: 2px; transition: width .3s ease; }
+  .shop-section { margin-bottom: 28px; }
+  .shop-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; }
+  .shop-section-title { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: .15em; text-transform: uppercase; font-family: 'Courier New', monospace; color: #C8C0B0; font-weight: 600; }
+  .shop-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 6px; cursor: pointer; transition: background .15s; }
+  .shop-item.checked { }
+  .checkbox { width: 17px; height: 17px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; border: 1.5px solid #3A3830; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .item-name { font-size: 14px; color: #EDE8DC; transition: all .15s; }
+  .item-name.checked { text-decoration: line-through; color: #4A4840; }
+  .item-qty { font-size: 11px; font-family: 'Courier New', monospace; font-weight: 600; flex-shrink: 0; }
+  .item-qty.checked { text-decoration: line-through; color: #4A4840 !important; }
+  .item-note { font-size: 10px; color: #5A5448; font-family: 'Courier New', monospace; margin-top: 2px; line-height: 1.4; }
+  .shop-notes { border-top: 1px solid #2A2820; padding-top: 18px; font-size: 11px; color: #5A5448; font-family: 'Courier New', monospace; line-height: 1.8; }
+  .shop-notes-title { color: #7A7060; font-weight: 600; font-size: 10px; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const budgetColors = { "$": "#7DB87D", "$$": "#C4A55A", "$$$": "#B05252" };
+
+const allMeals = {
+  "Bone Broth + Soft Eggs": {
+    tag:"Gentle Start",budget:"$",budgetNote:"~$1.50/serving · Eggs are the cheapest high-quality protein available",
+    color:"#D4A574",calories:168,
+    desc:"Warm mug of bone broth alongside two soft-boiled or poached eggs. Electrolytes ease you out of fasting; protein and fat stabilize blood sugar immediately.",
+    why:"After 14 hours fasted, your stomach acid is low and digestive enzymes need warming up. Warm liquid first signals your gut to activate. Eggs provide choline for liver function and complete amino acids — your body's first priority post-fast is protein synthesis, not energy.",
+    tips:["Sip broth 15 min before eating solid food","Add a pinch of sea salt to broth for electrolytes","Eggs cooked to just-set yolk = easier digestion"],
+    macros:{protein:"14g",fat:"12g",carbs:"1g"},
+    recipe:["Fill a small saucepan with enough water to submerge 2 eggs by 1 inch. Bring to a full boil.","Lower eggs gently. Set a timer: 6 min for jammy yolk, 7 min for fully set.","While eggs cook, heat 1½ cups (350ml) bone broth in a separate pot until steaming — do not boil.","Add a pinch of kosher salt and a squeeze of ½ lemon to the broth. Pour into a mug.","Transfer eggs to ice bath for 1 min. Peel, season with flaky salt and black pepper.","Sip the broth first. Wait 10–15 min before eating the eggs."]
+  },
+  "Greek Yogurt Parfait": {
+    tag:"Gentle Start",budget:"$",budgetNote:"~$2/serving · Store-brand full-fat Greek yogurt is just as good as premium",
+    color:"#8BBFB8",calories:250,
+    desc:"Full-fat Greek yogurt with frozen berries (thawed) and a drizzle of honey. Probiotics support gut health; fat+protein keeps you satiated without taxing digestion.",
+    why:"Casein protein in yogurt digests slowly — ideal after a fast because it won't spike insulin the way a carb-heavy meal would. The live cultures actively support the microbiome that regulates hunger hormones like ghrelin. Frozen berries are nutritionally identical to fresh at half the price.",
+    tips:["Full-fat only — fat slows glucose absorption","Frozen berries are cheaper and equally nutritious","Add flax or chia for fiber without bloat"],
+    macros:{protein:"18g",fat:"10g",carbs:"22g"},
+    recipe:["The night before: pull ½ cup (75g) frozen mixed berries and place in the fridge to thaw overnight. Or microwave 45 sec.","Spoon ¾ cup (170g) full-fat Greek yogurt into a bowl.","Top with the thawed berries and their juice — don't drain it.","Drizzle 1 tsp raw honey over the top.","Optional: 1 tsp ground flaxseed or chia seeds for extra fiber.","Eat slowly — this is a gentle first meal."]
+  },
+  "Avocado + Egg Toast": {
+    tag:"Savory & Satisfying",budget:"$",budgetNote:"~$2.50/serving · A fried egg keeps it budget-friendly",
+    color:"#7B9E6B",calories:410,
+    desc:"Sourdough with mashed avocado, two fried or poached eggs, red pepper flakes, and lemon. Healthy fats, complete protein, and fermented bread — a clean, filling fast-break.",
+    why:"Avocado's monounsaturated fats slow gastric emptying, meaning you stay full longer and blood sugar rises gradually. Sourdough's fermentation partially breaks down gluten and reduces phytic acid, making minerals more bioavailable — your body absorbs more from the same food.",
+    tips:["Sourdough fermentation aids mineral absorption","Season the avocado generously — you've lost sodium overnight","Two eggs over one: the extra protein costs pennies"],
+    macros:{protein:"20g",fat:"26g",carbs:"24g"},
+    recipe:["Toast 1 thick slice (1.5 oz / 40g) sourdough until deeply golden.","Halve 1 ripe avocado, scoop flesh into a bowl. Mash with juice of ¼ lemon, ¼ tsp kosher salt, black pepper.","Heat 1 tsp butter or olive oil in a nonstick pan over medium. Crack 2 eggs in. Cook until whites are set but yolks runny, 2–3 min.","Spread all avocado mash onto toast. Lay both eggs on top.","Finish with a pinch of red pepper flakes and a squeeze of lemon."]
+  },
+  "Oats with Peanut Butter + Banana": {
+    tag:"Budget Champion",budget:"$",budgetNote:"~$0.80/serving · One of the lowest cost-per-calorie meals you can make",
+    color:"#C9A0DC",calories:310,
+    desc:"Rolled oats cooked with peanut butter stirred in, topped with half a banana and cinnamon. Fiber, fat, and slow carbs — the IF trifecta on a shoestring.",
+    why:"Beta-glucan fiber in oats forms a gel in your gut that slows glucose absorption and feeds beneficial bacteria. Peanut butter's fat and protein blunts the carb spike from oats. Cinnamon meaningfully improves insulin sensitivity — not a myth, it's well-documented.",
+    tips:["Rolled oats over instant — slower digestion, better satiety","Stir PB in while hot so it melts evenly","Half a banana is enough; whole banana = too much sugar at fast break"],
+    macros:{protein:"12g",fat:"10g",carbs:"42g"},
+    recipe:["Combine ½ cup (45g) rolled oats with 1 cup (240ml) water in a small saucepan.","Bring to a medium boil, reduce to simmer. Cook 4–5 min until thick and creamy.","Remove from heat. Immediately stir in 1 tbsp natural peanut butter until fully incorporated.","Pour into a bowl. Slice ½ a medium banana directly onto the oats.","Sprinkle ¼ tsp ground cinnamon over the top. Optional: ½ tsp honey."]
+  },
+  "Veggie Scramble": {
+    tag:"Savory & Satisfying",budget:"$",budgetNote:"~$2/serving · Eggs + whatever veg is cheapest this week",
+    color:"#B8A060",calories:280,
+    desc:"Three eggs scrambled with spinach, onion, and whatever vegetable is on hand. Cooked low and slow in butter or olive oil.",
+    why:"Eggs are nutritionally complete: every essential amino acid, fat-soluble vitamins A/D/E/K, and choline for brain function. Slow-scrambling preserves more protein structure and keeps the eggs digestible. Spinach adds iron and magnesium — both depleted during fasting.",
+    tips:["Cook on medium-low — high heat makes eggs rubbery","Season with salt only at the end","Frozen spinach works just as well as fresh"],
+    macros:{protein:"22g",fat:"18g",carbs:"6g"},
+    recipe:["Dice ¼ medium onion, chop 1 cup (30g) spinach. Optional veg: ½ zucchini or 4–5 sliced mushrooms.","Heat 1 tsp butter or olive oil in a nonstick pan over medium. Add onion and harder veg. Cook 3–4 min until softened.","Add spinach. Stir until wilted, about 1 min. Push to the edges.","Crack 3 eggs into a bowl with 1 tsp water, whisk until frothy.","Reduce heat to medium-low. Pour eggs into the center. Drag spatula slowly from edges inward, folding gently. Stop when just barely set.","Season with salt and pepper at the end only. Plate immediately."]
+  },
+  "Brown Rice + Fried Egg Bowl": {
+    tag:"Budget Champion",budget:"$",budgetNote:"~$1.50/serving · Rice + eggs is one of the most complete budget combos",
+    color:"#E8A87C",calories:480,
+    desc:"Brown rice topped with two fried eggs, avocado, scallions, soy sauce, and sesame oil. Simple, filling, and built for sustained mid-window energy.",
+    why:"Brown rice's resistant starch fuels gut bacteria and releases glucose slowly — ideal mid-window when you need 4–5 hours of sustained energy. Eggs on top complete the amino acid profile that rice alone lacks. The fat from avocado and sesame oil ensures fat-soluble nutrients actually absorb.",
+    tips:["Batch cook brown rice on Sunday — reheat all week","Two eggs over easy keeps the yolk runny, acting as a sauce","A splash of soy sauce replaces the sodium you lost fasting"],
+    macros:{protein:"22g",fat:"20g",carbs:"52g"},
+    recipe:["Reheat 1 cup (185g) cooked brown rice in a pan with 1 tbsp water over medium, 2 min. (Or microwave 60–90 sec covered.)","Halve ½ a ripe avocado, slice in a crosshatch pattern in the skin, scoop out.","Heat 1 tsp neutral oil in a nonstick pan over medium. Crack 2 eggs in side by side. Cook until whites are set but yolks runny, about 2 min. Season.","Assemble: rice in bowl, avocado on the side, both eggs on top.","Drizzle 1 tsp soy sauce and ½ tsp sesame oil over everything.","Top with 1 sliced scallion. Optional: sesame seeds or red pepper flakes."]
+  },
+  "Sirloin + Arugula Salad": {
+    tag:"High Protein",budget:"$$",budgetNote:"~$5/serving · Sirloin at $10/lb, 5–6oz per serving = ~$3 protein cost",
+    color:"#B05252",calories:420,
+    desc:"Sliced seared sirloin over arugula with cherry tomatoes, shaved parmesan, red onion, and a lemon-olive oil dressing. High protein, anti-inflammatory fats, minimal carbs.",
+    why:"Sirloin is one of the leanest cuts of beef while still delivering complete protein and meaningful iron and zinc — both nutrients that IF can deplete. Arugula's bitterness actively stimulates bile production and digestion. The parmesan adds calcium and fat without bulk, keeping the meal light but satisfying mid-window.",
+    tips:["Slice sirloin thin against the grain — more surface area = better flavor in every bite","Room temp steak before searing — cold meat seizes in the pan","Dress arugula lightly; it wilts fast under too much acid"],
+    macros:{protein:"38g",fat:"22g",carbs:"8g"},
+    recipe:["Take 5–6 oz (140–170g) sirloin out of the fridge 15 min before cooking. Pat completely dry — moisture is the enemy of a good sear.","Season generously on both sides with kosher salt and black pepper.","Heat a cast iron or stainless pan over high heat until smoking. Add 1 tsp neutral oil.","Sear steak 2–3 min per side for medium-rare (130°F), 3–4 min per side for medium (140°F). Do not move it while searing.","Rest on a cutting board 5 min. Slice thin against the grain.","Make dressing: 1 tbsp olive oil, juice of ½ lemon, pinch of salt and pepper. Whisk.","Toss 2 large handfuls arugula with dressing. Add 8 halved cherry tomatoes and ¼ thinly sliced red onion.","Fan steak slices over the salad. Shave 1 oz (28g) parmesan over the top with a peeler."]
+  },
+  "Grilled Chicken + Greek Salad": {
+    tag:"Balanced Fuel",budget:"$$",budgetNote:"~$4/serving · Chicken thighs keep it budget-friendly vs breasts",
+    color:"#A8B87C",calories:430,
+    desc:"Sliced grilled chicken thigh over romaine, cherry tomatoes, kalamata olives, red onion, and feta. Dressed with olive oil, lemon, and dried oregano.",
+    why:"Chicken thighs provide more iron and zinc than breasts at lower cost. The classic Greek combination of olive oil, lemon, and oregano is one of the most studied anti-inflammatory flavor profiles in the Mediterranean diet. Protein and fat from chicken and feta extend satiety well into the afternoon.",
+    tips:["Pound the thigh flat for even thickness and faster cook time","Let the pan get very hot before adding chicken — sear not steam","Dress the salad while the chicken rests so acid doesn't wilt it"],
+    macros:{protein:"36g",fat:"24g",carbs:"10g"},
+    recipe:["Place 1 boneless skinless chicken thigh (5 oz / 140g) between plastic wrap. Pound to ½-inch thickness.","Season both sides with ½ tsp salt, ¼ tsp pepper, ¼ tsp dried oregano, squeeze of lemon.","Heat 1 tsp olive oil in a pan over medium-high. Cook 4–5 min per side until golden and cooked through (165°F). Rest 3 min, then slice.","Dressing: 1 tbsp olive oil, juice of ½ lemon, ¼ tsp dried oregano, salt and pepper. Whisk in the bottom of a large bowl.","Add 2 large handfuls chopped romaine. Toss to coat.","Add 10 halved cherry tomatoes, ¼ thinly sliced red onion, 10 kalamata olives.","Lay sliced chicken over the top. Crumble 1 oz (28g) feta over everything."]
+  },
+  "Chicken Soba Bowl": {
+    tag:"Balanced Fuel",budget:"$$",budgetNote:"~$4/serving · Chicken thigh adds protein the plain soba bowl lacks",
+    color:"#C4956A",calories:530,
+    desc:"Buckwheat soba noodles with sliced chicken thigh, shredded cucumber, scallions, and a sesame-soy dressing. Served room temp — no reheating needed.",
+    why:"Adding chicken to the soba bowl converts it from a light carb-forward meal into a balanced protein-and-carb lunch. Buckwheat's low glycemic index and the chicken's leucine content together create a sustained satiety effect well suited to the mid-window slot.",
+    tips:["Cook the chicken ahead and slice cold onto the noodles — better at room temp","100% buckwheat soba only — check the label","Double the dressing and keep in the fridge all week"],
+    macros:{protein:"34g",fat:"14g",carbs:"54g"},
+    recipe:["Season 1 boneless chicken thigh (5 oz / 140g) with salt and pepper. Heat 1 tsp oil over medium-high. Cook 4–5 min per side until cooked through. Rest 3 min, slice thin.","Bring a pot of water to a boil. Cook 3 oz (85g) dry soba noodles 4–5 min. Don't overcook.","Drain soba immediately and rinse under cold water 30 sec, tossing with your hands. Drain well.","Dressing: whisk 1½ tbsp soy sauce, 1 tsp sesame oil, 1 tsp rice vinegar, ½ tsp honey, ½ tsp grated ginger.","Pour dressing over noodles, toss to coat.","Add ½ English cucumber (julienned) and 2 sliced scallions. Toss gently.","Lay sliced chicken over noodles. Optional: sesame seeds and chili oil."]
+  },
+  "Chicken Thigh + Sweet Potato": {
+    tag:"Balanced Fuel",budget:"$$",budgetNote:"~$4/serving · Thighs are 40–60% cheaper than breasts with better nutrition",
+    color:"#B8860B",calories:530,
+    desc:"Sheet pan chicken thighs with diced sweet potato and broccolini, roasted in olive oil and garlic.",
+    why:"Sweet potato provides slow-release carbohydrates that restore glycogen without a glucose spike — critical mid-window when you need sustained energy through the afternoon. Chicken thighs contain more iron, zinc, and B vitamins than breasts, and the fat carries those nutrients into absorption.",
+    tips:["Thighs over breasts: cheaper, more flavorful, more nutritious","Don't overcrowd the pan or it steams instead of roasts","Batch cook 4 thighs at once; eat them across 2 days"],
+    macros:{protein:"40g",fat:"28g",carbs:"30g"},
+    recipe:["Preheat oven to 425°F (220°C). Line a sheet pan with foil.","Dice 1 medium sweet potato (8 oz / 225g) into ¾-inch cubes. Toss with 1 tbsp olive oil, ½ tsp salt, ¼ tsp pepper, ¼ tsp smoked paprika. Spread on one side.","Pat 2 bone-in skin-on chicken thighs (6 oz / 170g each) completely dry. Rub with 1 tsp olive oil, ½ tsp salt, ¼ tsp pepper, 2 minced garlic cloves. Skin-side up.","Roast 35 min. Add 1 bunch broccolini tossed in ½ tsp olive oil and salt to the pan.","Roast 10–12 more min until skin is deeply golden and internal temp reads 165°F.","Rest chicken 5 min before eating."]
+  },
+  "Roasted Veggie + Farro Bowl": {
+    tag:"Budget Champion",budget:"$",budgetNote:"~$2/serving · Farro is cheap in bulk and far more nutritious than plain rice",
+    color:"#7B9E6B",calories:430,
+    desc:"Farro with roasted zucchini, red onion, and cherry tomatoes, finished with olive oil, lemon, and crumbled feta.",
+    why:"Farro is an ancient grain with significantly more protein and fiber than white rice — 7g protein and 3g fiber per serving. Its chewy texture slows eating speed, which directly improves satiety signaling. Roasting vegetables at high heat concentrates their sugars and intensifies flavor without adding calories.",
+    tips:["Roast veg at 425°F — high heat = caramelization, not steaming","Batch farro on Sunday; it keeps 5 days in the fridge","Feta adds fat and sodium; don't skip it"],
+    macros:{protein:"16g",fat:"18g",carbs:"50g"},
+    recipe:["Cook farro: ½ cup (90g) dry farro + 1½ cups (360ml) water + pinch of salt. Boil, reduce, cover, cook 25–30 min until tender but chewy. Drain.","Preheat oven to 425°F. Chop 1 medium zucchini and ¼ red onion into 1-inch pieces. Halve 8 cherry tomatoes.","Toss veg with 1½ tbsp olive oil, ½ tsp salt, ¼ tsp pepper, ¼ tsp dried oregano. Single layer on sheet pan.","Roast 20–22 min, flipping once at 12 min, until caramelized and slightly charred.","Assemble: 1 cup cooked farro, roasted veg on top. Dress with 1 tsp olive oil and juice of ½ lemon.","Crumble 1 oz (28g) feta over the top. Fresh basil if available."]
+  }
+};
+
+const schedule = [
+  {day:"Monday",   breakfast:"Avocado + Egg Toast",              lunch:"Grilled Chicken + Greek Salad",  note:null},
+  {day:"Tuesday",  breakfast:"Bone Broth + Soft Eggs",           lunch:"Chicken Thigh + Sweet Potato",   note:"Add a snack: 1 hard-boiled egg or handful of almonds (~150 kcal) to reach the 750–900 target"},
+  {day:"Wednesday",breakfast:"Greek Yogurt Parfait",             lunch:"Brown Rice + Fried Egg Bowl",    note:"Add a snack: apple + 1 tbsp peanut butter or a small Greek yogurt (~150–200 kcal)"},
+  {day:"Thursday", breakfast:"Avocado + Egg Toast",              lunch:"Chicken Soba Bowl",              note:null},
+  {day:"Friday",   breakfast:"Oats with Peanut Butter + Banana", lunch:"Roasted Veggie + Farro Bowl",    note:null},
+  {day:"Saturday", breakfast:"Veggie Scramble",                  lunch:"Chicken Thigh + Sweet Potato",   note:null},
+  {day:"Sunday",   breakfast:"Oats with Peanut Butter + Banana", lunch:"Sirloin + Arugula Salad",        note:null}
+];
+
+const dayColors = ["#C4956A","#8BBFB8","#7B9E6B","#C9A0DC","#E8C4A0","#B8A060","#D4A574"];
+
+const shopSections = [
+  {name:"Produce",icon:"🥬",color:"#7DB87D",items:[
+    {name:"Avocados",qty:"4 ripe",note:"Mon & Thu breakfasts, 1 per person"},
+    {name:"Lemons",qty:"5",note:"Used across multiple meals for juice + zest"},
+    {name:"Bananas",qty:"2 medium",note:"Fri + Sun breakfasts — use ½ each"},
+    {name:"English cucumbers",qty:"2",note:"Thu soba bowl + Mon Greek salad"},
+    {name:"Cherry tomatoes",qty:"2 pints (~24 oz)",note:"Mon, Wed, Fri lunches + arugula salad"},
+    {name:"Red onion",qty:"2 medium",note:"Multiple lunches — salads and farro bowl"},
+    {name:"Scallions / green onions",qty:"1 bunch",note:"Wed rice bowl + Thu soba bowl"},
+    {name:"Zucchini",qty:"2 medium",note:"Fri farro bowl + Sat scramble"},
+    {name:"Broccolini or broccoli",qty:"2 bunches",note:"Tue + Sat sheet pan chicken"},
+    {name:"Sweet potatoes",qty:"4 medium (~2 lbs)",note:"Tue ×2 + Sat ×2 servings"},
+    {name:"Spinach or baby bok choy",qty:"1 large bag (5 oz)",note:"Sat scramble + general use"},
+    {name:"Romaine lettuce",qty:"1 head",note:"Mon Grilled Chicken Greek Salad"},
+    {name:"Arugula",qty:"1 bag (5 oz)",note:"Sun Sirloin + Arugula Salad"},
+    {name:"Fresh ginger root",qty:"1 small knob (2 in)",note:"Thu soba dressing"},
+    {name:"Garlic",qty:"1 head",note:"Multiple lunches — 8–10 cloves total"},
+  ]},
+  {name:"Protein",icon:"🥩",color:"#C4705A",items:[
+    {name:"Eggs",qty:"3 dozen (36 eggs)",note:"Used in nearly every breakfast + several lunches — buy in bulk"},
+    {name:"Bone-in skin-on chicken thighs",qty:"8 thighs (~3 lbs)",note:"Tue + Sat lunches, 2 thighs per person per meal"},
+    {name:"Boneless skinless chicken thighs",qty:"4 thighs (~1.5 lbs)",note:"Mon Greek salad + Thu soba bowl, 1 thigh per person each"},
+    {name:"Sirloin steak",qty:"~1 lb",note:"Sun lunch — 5–6 oz per person, ~$10/lb"},
+    {name:"Full-fat Greek yogurt",qty:"34 oz (~1 large tub)",note:"Wed breakfast, ¾ cup (170g) per person"},
+  ]},
+  {name:"Dairy & Refrigerated",icon:"🧀",color:"#C4A55A",items:[
+    {name:"Feta cheese (block, not crumbled)",qty:"6 oz",note:"Fri farro bowl + Mon Greek salad"},
+    {name:"Parmesan (wedge)",qty:"2 oz",note:"Sun sirloin salad — shaved with a peeler"},
+    {name:"Unsalted butter",qty:"1 stick (4 oz)",note:"Mon + Thu egg toast + various cooking"},
+  ]},
+  {name:"Pantry & Dry Goods",icon:"🫙",color:"#A89060",items:[
+    {name:"Rolled oats (not instant)",qty:"1 lb bag",note:"Fri + Sun breakfasts, ½ cup per person"},
+    {name:"Brown rice",qty:"2 lbs bag",note:"Wed lunch batch cook"},
+    {name:"Farro",qty:"1 lb bag",note:"Fri lunch — batch cook ½ cup dry per person"},
+    {name:"Soba noodles (100% buckwheat)",qty:"8 oz package",note:"Thu lunch — 3 oz dry per person; check label"},
+    {name:"Sourdough bread (thick-sliced)",qty:"1 loaf",note:"Mon + Thu breakfast, 1 thick slice per person"},
+    {name:"Natural peanut butter",qty:"1 jar (16 oz)",note:"Fri + Sun breakfast — 1 tbsp per person; rest keeps"},
+  ]},
+  {name:"Canned & Jarred",icon:"🥫",color:"#8B7355",items:[
+    {name:"Bone broth (carton or cans)",qty:"1 quart (32 oz)",note:"Tue breakfast — 1½ cups (350ml) per person"},
+    {name:"Kalamata olives (pitted)",qty:"1 jar (6 oz)",note:"Mon Grilled Chicken Greek Salad — ~10 olives per person"},
+  ]},
+  {name:"Oils, Sauces & Condiments",icon:"🫒",color:"#7A9060",items:[
+    {name:"Extra virgin olive oil",qty:"1 bottle (16 oz)",note:"Used in nearly every meal"},
+    {name:"Soy sauce (low sodium preferred)",qty:"1 bottle",note:"Wed rice bowl + Thu soba dressing"},
+    {name:"Sesame oil (toasted)",qty:"1 small bottle",note:"Wed + Thu — a little goes far"},
+    {name:"Rice vinegar",qty:"1 small bottle",note:"Thu soba dressing"},
+    {name:"Raw honey",qty:"1 jar (small)",note:"Wed yogurt parfait + soba dressing"},
+  ]},
+  {name:"Frozen",icon:"🧊",color:"#6B9BAE",items:[
+    {name:"Frozen mixed berries",qty:"1 lb bag (16 oz)",note:"Wed breakfast — ½ cup per person; rest keeps"},
+  ]},
+  {name:"Spices & Dry Seasonings",icon:"🧂",color:"#9A7A60",items:[
+    {name:"Kosher salt",qty:"On hand",note:""},
+    {name:"Black pepper",qty:"On hand",note:""},
+    {name:"Smoked paprika",qty:"1 small jar",note:"Tue + Sat chicken thighs"},
+    {name:"Dried oregano",qty:"1 small jar",note:"Fri farro bowl + Mon Greek salad"},
+    {name:"Ground cinnamon",qty:"1 small jar",note:"Fri + Sun oat breakfast"},
+    {name:"Red pepper flakes",qty:"1 small jar",note:"Mon + Thu egg toast + general use"},
+    {name:"Sesame seeds",qty:"1 small bag",note:"Optional garnish — Thu soba"},
+  ]},
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let view = 'schedule';
+let activeDay = 0;
+let openMeal = {};   // {dayIdx_slot: true}
+let mealPanel = {};  // {dayIdx_slot: 'why'|'recipe'|'tips'}
+let shopChecked = {};
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('app').innerHTML = buildApp();
+  attachEvents();
+}
+
+function buildApp() {
+  return `
+    ${buildHeader()}
+    ${view === 'schedule' ? buildSchedule() : buildShopping()}
+  `;
+}
+
+function buildHeader() {
+  return `
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-eyebrow">Intermittent Fasting · 11:30 AM Window · 2 People</div>
+      <h1 class="header-title">${view === 'schedule' ? 'Weekly Meal Schedule' : 'Shopping List'}</h1>
+      <div class="main-tabs">
+        <button class="main-tab ${view==='schedule'?'active':''}" onclick="setView('schedule')">📅  Schedule</button>
+        <button class="main-tab ${view==='shopping'?'active':''}" onclick="setView('shopping')">🛒  Shopping List</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildSchedule() {
+  const day = schedule[activeDay];
+  const bMeal = allMeals[day.breakfast];
+  const lMeal = allMeals[day.lunch];
+  const bCals = bMeal?.calories || 0;
+  const lCals = lMeal?.calories || 0;
+  const total = bCals + lCals;
+  const target = 900;
+  const pct = Math.min((total / target) * 100, 100);
+  const inBand = total >= 750 && total <= 950;
+  const statusColor = inBand ? '#7DB87D' : total < 750 ? '#C4A55A' : '#B05252';
+
+  const dayTabsHtml = schedule.map((d,i) => `
+    <button class="day-tab" onclick="setDay(${i})" style="border-bottom-color:${activeDay===i?dayColors[i]:'transparent'}">
+      <div class="day-tab-label" style="color:${activeDay===i?dayColors[i]:'#4A4840'}">${d.day.slice(0,3)}</div>
+      <div class="day-tab-dot" style="background:${activeDay===i?dayColors[i]:'transparent'}"></div>
+    </button>`).join('');
+
+  const snackHtml = day.note ? `<div class="snack-note">⚡ ${day.note}</div>` : '';
+
+  const navHtml = `
+    <div class="day-nav">
+      ${activeDay > 0 ? `<button class="nav-btn" onclick="setDay(${activeDay-1})">← ${schedule[activeDay-1].day}</button>` : '<div></div>'}
+      ${activeDay < 6 ? `<button class="nav-btn next" onclick="setDay(${activeDay+1})">${schedule[activeDay+1].day} →</button>` : ''}
+    </div>`;
+
+  return `
+    <div class="day-tabs-wrap"><div class="day-tabs">${dayTabsHtml}</div></div>
+    <div class="content">
+      <div class="day-header">
+        <span class="day-name">${day.day}</span>
+        <span class="day-num" style="color:${dayColors[activeDay]}">Day ${activeDay+1} of 7</span>
+      </div>
+
+      <div class="cal-bar" style="background:#161410;border:1px solid ${statusColor}30">
+        <div class="cal-bar-header">
+          <span class="cal-bar-label">These 2 meals · target 750–900</span>
+          <span class="cal-bar-total" style="color:${statusColor}">${total} <span style="font-size:11px;color:#5A5448">kcal</span></span>
+        </div>
+        <div class="cal-bar-track">
+          <div class="cal-bar-marker" style="left:${(750/900)*100}%"></div>
+          <div class="cal-bar-fill" style="width:${pct}%;background:${statusColor}"></div>
+        </div>
+        <div class="cal-bar-split">
+          <span>Breakfast: ${bCals} kcal</span>
+          <span>Lunch: ${lCals} kcal</span>
+        </div>
+        <div class="cal-bar-dinner">Dinner budget: <span style="color:${statusColor}">${Math.max(0,2200-total)}–${Math.max(0,2400-total)} kcal</span> <span style="color:#3A3830">· deficit target 2,200–2,400/day · TDEE ~2,800</span></div>
+        ${snackHtml}
+      </div>
+
+      <div class="section-label">11:30 AM — Break Fast</div>
+      ${buildMealCard(day.breakfast, 'Breakfast', activeDay+'_b')}
+      <div class="section-label">2:00–3:00 PM — Mid Window</div>
+      ${buildMealCard(day.lunch, 'Lunch', activeDay+'_l')}
+
+      <div class="fast-bar"><span style="color:#C4A55A">Fast window:</span> 9:30 PM tonight → 11:30 AM tomorrow · 14 hours</div>
+      ${navHtml}
+    </div>`;
+}
+
+function buildMealCard(mealName, slot, key) {
+  const meal = allMeals[mealName];
+  if (!meal) return '';
+  const isOpen = !!openMeal[key];
+  const panel = mealPanel[key] || 'why';
+
+  const macrosHtml = Object.entries(meal.macros).map(([k,v]) => `
+    <div class="macro-box">
+      <div class="macro-val">${v}</div>
+      <div class="macro-key">${k}</div>
+    </div>`).join('');
+
+  let bodyHtml = '';
+  if (isOpen) {
+    let panelContent = '';
+    if (panel === 'why') {
+      panelContent = `<p class="why-text">${meal.why}</p>`;
+    } else if (panel === 'recipe') {
+      panelContent = meal.recipe.map((step,j) => `
+        <div class="recipe-step">
+          <div class="step-num" style="background:${meal.color}20;border:1px solid ${meal.color}55;color:${meal.color}">${j+1}</div>
+          <span class="step-text">${step}</span>
+        </div>`).join('');
+    } else {
+      panelContent = meal.tips.map(tip => `
+        <div class="tip-row">
+          <span class="tip-arrow" style="color:${meal.color}">→</span>
+          <span class="tip-text">${tip}</span>
+        </div>`).join('');
+    }
+
+    bodyHtml = `
+      <div class="meal-body">
+        <div class="budget-note-bar" style="color:${budgetColors[meal.budget]}BB">${meal.budgetNote}</div>
+        <div class="panel-tabs">
+          ${[['why','Why It Works'],['recipe','Recipe'],['tips','Pro Tips']].map(([k,l]) => `
+            <button class="panel-tab" onclick="setPanel('${key}','${k}')"
+              style="border-bottom-color:${panel===k?meal.color:'transparent'};color:${panel===k?meal.color:'#4A4840'}">${l}</button>`).join('')}
+        </div>
+        <div class="panel-content">${panelContent}</div>
+      </div>`;
+  }
+
+  return `
+    <div class="meal-card ${isOpen?'open':''}" style="border-color:${isOpen?meal.color+'55':'#2A2820'}">
+      <div class="meal-card-header" onclick="toggleMeal('${key}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="flex:1">
+            <div class="meal-tags">
+              <span class="tag" style="background:#2A2820;color:#6A6458">${slot}</span>
+              <span class="tag" style="background:${meal.color}18;color:${meal.color}">${meal.tag}</span>
+              <span class="tag" style="background:${budgetColors[meal.budget]}18;color:${budgetColors[meal.budget]};font-weight:700">${meal.budget}</span>
+            </div>
+            <div class="meal-name">${mealName}</div>
+            <div class="meal-desc">${meal.desc}</div>
+          </div>
+          <div class="meal-toggle" style="color:${isOpen?meal.color:'#3A3830'};transform:${isOpen?'rotate(45deg)':'none'}">✕</div>
+        </div>
+        <div class="macros-row">
+          <div class="cal-pill" style="background:${meal.color}20;border:1px solid ${meal.color}50">
+            <div class="cal-pill-num" style="color:${meal.color}">${meal.calories}</div>
+            <div class="cal-pill-label" style="color:${meal.color}99">kcal</div>
+          </div>
+          ${macrosHtml}
+        </div>
+      </div>
+      ${bodyHtml}
+    </div>`;
+}
+
+function buildShopping() {
+  const totalItems = shopSections.reduce((a,s) => a + s.items.length, 0);
+  const checkedCount = Object.values(shopChecked).filter(Boolean).length;
+  const pct = (checkedCount / totalItems) * 100;
+
+  const sectionsHtml = shopSections.map((section, si) => {
+    const sectionChecked = section.items.filter((_,ii) => shopChecked[`${si}-${ii}`]).length;
+    const itemsHtml = section.items.map((item, ii) => {
+      const key = `${si}-${ii}`;
+      const isChecked = !!shopChecked[key];
+      return `
+        <div class="shop-item" onclick="toggleShop('${key}')" style="background:${isChecked?section.color+'10':'transparent'}">
+          <div class="checkbox" style="border-color:${isChecked?section.color:'#3A3830'};background:${isChecked?section.color:'transparent'}">
+            ${isChecked ? '<svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3 5.5L8 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+              <span class="item-name ${isChecked?'checked':''}">${item.name}</span>
+              <span class="item-qty ${isChecked?'checked':''}" style="color:${isChecked?'#4A4840':section.color}">${item.qty}</span>
+            </div>
+            ${item.note ? `<div class="item-note" style="color:${isChecked?'#3A3830':'#5A5448'}">${item.note}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="shop-section">
+        <div class="shop-section-header" style="border-bottom:2px solid ${section.color}25">
+          <div class="shop-section-title"><span>${section.icon}</span><span>${section.name}</span></div>
+          <span style="font-size:11px;font-family:'Courier New',monospace;color:${sectionChecked===section.items.length?section.color:'#5A5448'}">${sectionChecked}/${section.items.length}</span>
+        </div>
+        <div>${itemsHtml}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="shop-wrap">
+      <div class="budget-line">~$95–115 for two people · ~$7–8/person/day for 2 meals</div>
+      <div class="progress-row">
+        <span>${checkedCount} of ${totalItems} items</span>
+        <span>${Math.round(pct)}% done</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      ${sectionsHtml}
+      <div class="shop-notes">
+        <div class="shop-notes-title">Notes</div>
+        <p>· Eggs (3 dozen) are the single biggest line item but cover nearly every meal.</p>
+        <p>· Check your spice cabinet — most jars listed may already be on hand.</p>
+        <p>· Batch cook brown rice + farro on Sunday to cover Wed + Fri lunches.</p>
+        <p>· Buy all 8 bone-in thighs at once — cook Tue batch Tuesday, Sat batch Saturday.</p>
+      </div>
+    </div>`;
+}
+
+// ── EVENT HANDLERS ─────────────────────────────────────────────────────────
+function attachEvents() {}
+
+function setView(v) { view = v; render(); window.scrollTo(0,0); }
+function setDay(i) { activeDay = i; openMeal = {}; mealPanel = {}; render(); window.scrollTo(0,0); }
+function toggleMeal(key) { openMeal[key] = !openMeal[key]; if (!mealPanel[key]) mealPanel[key] = 'why'; render(); }
+function setPanel(key, p) { mealPanel[key] = p; render(); }
+function toggleShop(key) { shopChecked[key] = !shopChecked[key]; render(); }
+
+render();
+</script>
+</body>
+</html>
